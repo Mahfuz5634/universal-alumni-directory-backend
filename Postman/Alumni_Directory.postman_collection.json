@@ -1,0 +1,222 @@
+{
+	"info": {
+		"name": "Universal Alumni Directory API (Updated)",
+		"description": "API Documentation and Testing Collection for University-Centric Alumni Directory including new University-wise and Admin features.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Register User (Alumni/Admin/Student)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Md. Mahfuz\",\n    \"email\": \"mahfuz@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"alumni\",\n    \"university_id\": \"65c2b2a1c2b3c4d5e6f7a8b9\",\n    \"graduation_year\": 2026\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Notun user register korar jonno. Role hote pare: 'alumni', 'student', ba 'admin'."
+					}
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"mahfuz@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"alumni\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login korle ekta JWT token paben. Sei token ti onnanno API call e babohar korte hobe."
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Universities",
+			"item": [
+				{
+					"name": "Get All Universities",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/universities",
+							"host": ["{{base_url}}"],
+							"path": ["api", "universities"]
+						}
+					}
+				},
+				{
+					"name": "Add University (Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Daffodil International University\",\n    \"location\": \"Ashulia, Dhaka\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/universities",
+							"host": ["{{base_url}}"],
+							"path": ["api", "universities"]
+						}
+					}
+				},
+				{
+					"name": "Get University-wise Alumni",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/universities/YOUR_UNIVERSITY_ID_HERE/alumni",
+							"host": ["{{base_url}}"],
+							"path": ["api", "universities", "YOUR_UNIVERSITY_ID_HERE", "alumni"]
+						},
+						"description": "Nirdishto university-r shudhu verified alumni list pawar jonno (sob user dekhte parbe)."
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Alumni Profile",
+			"item": [
+				{
+					"name": "Get Profile By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/alumni/profile/YOUR_ALUMNI_ID_HERE",
+							"host": ["{{base_url}}"],
+							"path": ["api", "alumni", "profile", "YOUR_ALUMNI_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"company\": \"Google\",\n    \"position\": \"Software Engineer\",\n    \"location\": \"Dhaka, Bangladesh\",\n    \"linkedin_url\": \"https://linkedin.com/in/mahfuz\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/alumni/profile/YOUR_ALUMNI_ID_HERE",
+							"host": ["{{base_url}}"],
+							"path": ["api", "alumni", "profile", "YOUR_ALUMNI_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Directory & Search",
+			"item": [
+				{
+					"name": "Search/Filter Directory",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/directory?company=Google&location=Dhaka",
+							"host": ["{{base_url}}"],
+							"path": ["api", "directory"],
+							"query": [
+								{ "key": "company", "value": "Google" },
+								{ "key": "location", "value": "Dhaka" }
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Admin Actions",
+			"item": [
+				{
+					"name": "Get All Alumni for specific University (Admin Only)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/alumni",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "alumni"]
+						},
+						"description": "Admin tar nijer university-r shob alumni (verified + unverified) list dekhte parbe."
+					}
+				},
+				{
+					"name": "Verify Alumni (Admin Only)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/verify/ALUMNI_ID_HERE",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "verify", "ALUMNI_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete User (Admin Only)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/delete/ALUMNI_ID_HERE",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "delete", "ALUMNI_ID_HERE"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000"
+		},
+		{
+			"key": "token",
+			"value": "PASTE_YOUR_JWT_TOKEN_HERE"
+		}
+	]
+}

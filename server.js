@@ -11,17 +11,15 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ==========================================
-// 1. AUTHENTICATION APIs [cite: 51]
-// ==========================================
 
+// 1. AUTHENTICATION APIs
 // Register API (Alumni, Student ba Admin er jonno)
 app.post('/api/auth/register', async (req, res) => {
     const db = getDb();
     const { name, email, password, role, university_id, graduation_year, student_roll_no } = req.body;
 
     try {
-        // Password hashing [cite: 92]
+        // Password hashing
         const password_hash = await bcrypt.hash(password, 10);
         const newUser = {
             name, email, password_hash, university_id: new ObjectId(university_id),
@@ -29,7 +27,7 @@ app.post('/api/auth/register', async (req, res) => {
         };
 
         let result;
-        // Role onujayi specific collection e data insert kora [cite: 122]
+        // Role onujayi specific collection e data insert kora 
         if (role === 'alumni') {
             newUser.graduation_year = graduation_year;
             newUser.is_verified = false;
@@ -65,7 +63,7 @@ app.post('/api/auth/login', async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, user.password_hash);
         if (!isPasswordValid) return res.status(401).json({ error: 'Invalid password' });
 
-        // JWT token generate kora [cite: 93]
+        // JWT token generate kora 
         const token = jwt.sign(
             { id: user._id, email: user.email, role, university_id: user.university_id },
             process.env.JWT_SECRET,
@@ -78,9 +76,8 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// ==========================================
+
 // 2. ALUMNI PROFILE APIs 
-// ==========================================
 
 // Get Profile Details
 app.get('/api/alumni/profile/:id', verifyToken, async (req, res) => {
@@ -93,7 +90,7 @@ app.get('/api/alumni/profile/:id', verifyToken, async (req, res) => {
     }
 });
 
-// Update Profile [cite: 66, 67]
+// Update Profile 
 app.put('/api/alumni/profile/:id', verifyToken, async (req, res) => {
     const db = getDb();
     const updateData = req.body; 
@@ -112,11 +109,9 @@ app.put('/api/alumni/profile/:id', verifyToken, async (req, res) => {
     }
 });
 
-// ==========================================
-// 3. DIRECTORY & SEARCH APIs 
-// ==========================================
 
-// Get Directory (Filter & Search combined) [cite: 72, 73, 74, 75, 76, 77, 78, 79]
+// 3. DIRECTORY & SEARCH APIs 
+// Get Directory (Filter & Search combined) 
 app.get('/api/directory', verifyToken, async (req, res) => {
     const db = getDb();
     const { name, department, graduation_year, company, location, university_id } = req.query;
@@ -138,11 +133,10 @@ app.get('/api/directory', verifyToken, async (req, res) => {
     }
 });
 
-// ==========================================
-// 4. ADMIN APIs 
-// ==========================================
 
-// Admin: Verify Alumni Profile [cite: 84]
+// 4. ADMIN APIs 
+
+// Admin: Verify Alumni Profile 
 app.put('/api/admin/verify/:id', verifyToken, verifyAdmin, async (req, res) => {
     const db = getDb();
     try {
@@ -151,7 +145,7 @@ app.put('/api/admin/verify/:id', verifyToken, verifyAdmin, async (req, res) => {
             { 
                 $set: { 
                     is_verified: true, 
-                    verified_by: new ObjectId(req.user.id) // Admin er ID db image onujayi [cite: 142]
+                    verified_by: new ObjectId(req.user.id) // Admin er ID db image onujayi 
                 } 
             }
         );
@@ -161,7 +155,7 @@ app.put('/api/admin/verify/:id', verifyToken, verifyAdmin, async (req, res) => {
     }
 });
 
-// Admin: Delete/Remove Alumni [cite: 85]
+// Admin: Delete/Remove Alumni 
 app.delete('/api/admin/delete/:id', verifyToken, verifyAdmin, async (req, res) => {
     const db = getDb();
     try {
@@ -172,9 +166,8 @@ app.delete('/api/admin/delete/:id', verifyToken, verifyAdmin, async (req, res) =
     }
 });
 
-// ==========================================
-// 5. UNIVERSITY APIs [cite: 68]
-// ==========================================
+
+// 5. UNIVERSITY APIs 
 
 // Add University (Admin Only)
 app.post('/api/universities', verifyToken, verifyAdmin, async (req, res) => {
@@ -190,7 +183,38 @@ app.post('/api/universities', verifyToken, verifyAdmin, async (req, res) => {
     }
 });
 
-// Get all universities [cite: 69]
+// Admin: Get all alumni (Verified + Unverified) for their specific university
+app.get('/api/admin/alumni', verifyToken, verifyAdmin, async (req, res) => {
+    const db = getDb();
+    try {
+        const query = { university_id: new ObjectId(req.user.university_id) };
+        
+        // সব অ্যালামনাই (verified এবং unverified) বের করে আনবে
+        const alumniList = await db.collection('alumni').find(query).toArray();
+        res.status(200).json(alumniList);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get verified alumni by specific University ID
+app.get('/api/universities/:id/alumni', verifyToken, async (req, res) => {
+    const db = getDb();
+    try {
+        const query = { 
+            university_id: new ObjectId(req.params.id),
+            is_verified: true // সাধারণ ইউজাররা শুধু verified অ্যালামনাইদের দেখতে পারবে
+        };
+        
+        const alumniList = await db.collection('alumni').find(query).toArray();
+        res.status(200).json(alumniList);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// Get all universities 
 app.get('/api/universities', async (req, res) => {
     const db = getDb();
     try {
@@ -201,9 +225,8 @@ app.get('/api/universities', async (req, res) => {
     }
 });
 
-// ==========================================
+
 // SERVER INITIALIZATION
-// ==========================================
 const PORT = process.env.PORT || 5000;
 
 connectToServer().then(() => {
