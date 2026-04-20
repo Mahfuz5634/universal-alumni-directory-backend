@@ -8,7 +8,7 @@ module.exports = {
     connectToServer: async function () {
         try {
             await client.connect();
-            dbConnection = client.db('AlumniDirectory'); // Database er nam
+            dbConnection = client.db('AlumniDirectory'); 
             console.log('Successfully connected to Native MongoDB.');
         } catch (err) {
             console.error('MongoDB connection error:', err);
