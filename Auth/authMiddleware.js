@@ -19,5 +19,20 @@ const verifyAdmin = (req, res, next) => {
     }
     next();
 };
+const verifySystemAdmin = (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied. System Admin only.' });
+    }
+    next();
+};
 
-module.exports = { verifyToken, verifyAdmin };
+const verifyUniAdmin = (req, res, next) => {
+    if (req.user.role !== 'uni_admin') {
+        return res.status(403).json({ error: 'Access denied. University Admin only.' });
+    }
+    next();
+};
+
+
+
+module.exports = { verifyToken, verifyAdmin, verifySystemAdmin, verifyUniAdmin };

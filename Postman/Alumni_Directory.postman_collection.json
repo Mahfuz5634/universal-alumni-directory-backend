@@ -1,7 +1,7 @@
 {
 	"info": {
-		"name": "Universal Alumni Directory API (Updated)",
-		"description": "API Documentation and Testing Collection for University-Centric Alumni Directory including new University-wise and Admin features.",
+		"name": "Final Alumni Directory API Collection",
+		"description": "Complete API Collection containing Authentication, Directory, System Admin, Uni Admin, Student Views, and Profile features.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -9,7 +9,7 @@
 			"name": "1. Authentication",
 			"item": [
 				{
-					"name": "Register User (Alumni/Admin/Student)",
+					"name": "1.1 Register as Alumni",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -17,18 +17,13 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Md. Mahfuz\",\n    \"email\": \"mahfuz@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"alumni\",\n    \"university_id\": \"65c2b2a1c2b3c4d5e6f7a8b9\",\n    \"graduation_year\": 2026\n}"
+							"raw": "{\n    \"name\": \"Md. Mahfuz\",\n    \"email\": \"mahfuz.alumni@example.com\",\n    \"password\": \"pass1234\",\n    \"role\": \"alumni\",\n    \"university_id\": \"PASTE_UNIVERSITY_ID_HERE\",\n    \"department\": \"CSE\",\n    \"graduation_year\": 2023,\n    \"student_roll_no\": \"UG02-43-18-051\",\n    \"company\": \"Google\",\n    \"position\": \"Software Engineer\",\n    \"contact_number\": \"01712345678\",\n    \"linkedin_id\": \"https://linkedin.com/in/mahfuz\",\n    \"github_id\": \"https://github.com/mahfuz\"\n}"
 						},
-						"url": {
-							"raw": "{{base_url}}/api/auth/register",
-							"host": ["{{base_url}}"],
-							"path": ["api", "auth", "register"]
-						},
-						"description": "Notun user register korar jonno. Role hote pare: 'alumni', 'student', ba 'admin'."
+						"url": "{{base_url}}/api/auth/register"
 					}
 				},
 				{
-					"name": "Login User",
+					"name": "1.2 Register as Student",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -36,14 +31,23 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"mahfuz@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"alumni\"\n}"
+							"raw": "{\n    \"name\": \"Sabbir Hossain\",\n    \"email\": \"sabbir.student@example.com\",\n    \"password\": \"pass1234\",\n    \"role\": \"student\",\n    \"university_id\": \"PASTE_UNIVERSITY_ID_HERE\",\n    \"department\": \"BBA\",\n    \"graduation_year\": 2026,\n    \"contact_number\": \"01812345678\"\n}"
 						},
-						"url": {
-							"raw": "{{base_url}}/api/auth/login",
-							"host": ["{{base_url}}"],
-							"path": ["api", "auth", "login"]
+						"url": "{{base_url}}/api/auth/register"
+					}
+				},
+				{
+					"name": "1.3 Login (All Users & Admins)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"mahfuz.alumni@example.com\",\n    \"password\": \"pass1234\",\n    \"role\": \"alumni\"\n}"
 						},
-						"description": "Login korle ekta JWT token paben. Sei token ti onnanno API call e babohar korte hobe."
+						"url": "{{base_url}}/api/auth/login"
 					}
 				}
 			]
@@ -52,158 +56,227 @@
 			"name": "2. Universities",
 			"item": [
 				{
-					"name": "Get All Universities",
+					"name": "2.1 Get All Universities (Public)",
 					"request": {
 						"method": "GET",
 						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/universities",
-							"host": ["{{base_url}}"],
-							"path": ["api", "universities"]
-						}
+						"url": "{{base_url}}/api/universities"
 					}
 				},
 				{
-					"name": "Add University (Admin Only)",
+					"name": "2.2 Add University (System Admin)",
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "Content-Type", "value": "application/json" },
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Daffodil International University\",\n    \"location\": \"Ashulia, Dhaka\"\n}"
+							"raw": "{\n    \"name\": \"Daffodil International University\",\n    \"location\": \"Ashulia, Savar, Dhaka\"\n}"
 						},
-						"url": {
-							"raw": "{{base_url}}/api/universities",
-							"host": ["{{base_url}}"],
-							"path": ["api", "universities"]
-						}
+						"url": "{{base_url}}/api/universities"
 					}
 				},
 				{
-					"name": "Get University-wise Alumni",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": {
-							"raw": "{{base_url}}/api/universities/YOUR_UNIVERSITY_ID_HERE/alumni",
-							"host": ["{{base_url}}"],
-							"path": ["api", "universities", "YOUR_UNIVERSITY_ID_HERE", "alumni"]
-						},
-						"description": "Nirdishto university-r shudhu verified alumni list pawar jonno (sob user dekhte parbe)."
-					}
-				}
-			]
-		},
-		{
-			"name": "3. Alumni Profile",
-			"item": [
-				{
-					"name": "Get Profile By ID",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": {
-							"raw": "{{base_url}}/api/alumni/profile/YOUR_ALUMNI_ID_HERE",
-							"host": ["{{base_url}}"],
-							"path": ["api", "alumni", "profile", "YOUR_ALUMNI_ID_HERE"]
-						}
-					}
-				},
-				{
-					"name": "Update Profile",
+					"name": "2.3 Edit University (System Admin)",
 					"request": {
 						"method": "PUT",
 						"header": [
-							{ "key": "Content-Type", "value": "application/json" },
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"company\": \"Google\",\n    \"position\": \"Software Engineer\",\n    \"location\": \"Dhaka, Bangladesh\",\n    \"linkedin_url\": \"https://linkedin.com/in/mahfuz\"\n}"
+							"raw": "{\n    \"name\": \"Daffodil International University (Updated)\",\n    \"location\": \"Smart City, Ashulia, Dhaka\"\n}"
 						},
-						"url": {
-							"raw": "{{base_url}}/api/alumni/profile/YOUR_ALUMNI_ID_HERE",
-							"host": ["{{base_url}}"],
-							"path": ["api", "alumni", "profile", "YOUR_ALUMNI_ID_HERE"]
-						}
-					}
-				}
-			]
-		},
-		{
-			"name": "4. Directory & Search",
-			"item": [
-				{
-					"name": "Search/Filter Directory",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": {
-							"raw": "{{base_url}}/api/directory?company=Google&location=Dhaka",
-							"host": ["{{base_url}}"],
-							"path": ["api", "directory"],
-							"query": [
-								{ "key": "company", "value": "Google" },
-								{ "key": "location", "value": "Dhaka" }
-							]
-						}
-					}
-				}
-			]
-		},
-		{
-			"name": "5. Admin Actions",
-			"item": [
-				{
-					"name": "Get All Alumni for specific University (Admin Only)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": {
-							"raw": "{{base_url}}/api/admin/alumni",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "alumni"]
-						},
-						"description": "Admin tar nijer university-r shob alumni (verified + unverified) list dekhte parbe."
+						"url": "{{base_url}}/api/universities/UNI_ID_HERE"
 					}
 				},
 				{
-					"name": "Verify Alumni (Admin Only)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{ "key": "Authorization", "value": "Bearer {{token}}" }
-						],
-						"url": {
-							"raw": "{{base_url}}/api/admin/verify/ALUMNI_ID_HERE",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "verify", "ALUMNI_ID_HERE"]
-						}
-					}
-				},
-				{
-					"name": "Delete User (Admin Only)",
+					"name": "2.4 Delete University (System Admin)",
 					"request": {
 						"method": "DELETE",
 						"header": [
 							{ "key": "Authorization", "value": "Bearer {{token}}" }
 						],
+						"url": "{{base_url}}/api/universities/UNI_ID_HERE"
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Directory & Views",
+			"item": [
+				{
+					"name": "3.1 Smart Directory Search (Role Based)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
 						"url": {
-							"raw": "{{base_url}}/api/admin/delete/ALUMNI_ID_HERE",
+							"raw": "{{base_url}}/api/directory?department=CSE",
 							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "delete", "ALUMNI_ID_HERE"]
+							"path": ["api", "directory"],
+							"query": [
+								{ "key": "department", "value": "CSE" },
+								{ "key": "company", "value": "Google", "disabled": true },
+								{ "key": "graduation_year", "value": "2023", "disabled": true }
+							]
 						}
+					}
+				},
+				{
+					"name": "3.2 View Own Uni Alumni (Student/Alumni View)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/my-university/alumni",
+						"description": "Student/Alumni shudhu nijer uni-r Verified alumni dekhbe."
+					}
+				}
+			]
+		},
+		{
+			"name": "4. System Admin Actions",
+			"item": [
+				{
+					"name": "4.1 Create Uni Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"DIU Controller\",\n    \"email\": \"admin@diu.edu.bd\",\n    \"password\": \"admin123\",\n    \"university_id\": \"PASTE_UNIVERSITY_ID_HERE\"\n}"
+						},
+						"url": "{{base_url}}/api/admin/system/create-uni-admin"
+					}
+				},
+				{
+					"name": "4.2 Edit Uni Admin Details",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"DIU Super Admin\"\n}"
+						},
+						"url": "{{base_url}}/api/admin/system/uni-admin/UNI_ADMIN_ID_HERE"
+					}
+				},
+				{
+					"name": "4.3 Get ALL Alumni (Cross-University)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/admin/system/all-alumni"
+					}
+				},
+				{
+					"name": "4.4 Delete ANY Alumni",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/admin/system/alumni/ALUMNI_ID_HERE"
+					}
+				}
+			]
+		},
+		{
+			"name": "5. University Admin Actions",
+			"item": [
+				{
+					"name": "5.1 View ALL Own Uni Alumni (For Verification)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/admin/uni/all-alumni",
+						"description": "Uni Admin nijer uni-r shob (Verified + Unverified) alumni dekhbe."
+					}
+				},
+				{
+					"name": "5.2 Verify Alumni",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/admin/uni/verify/ALUMNI_ID_HERE"
+					}
+				},
+				{
+					"name": "5.3 Unverify (Reject) Alumni",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/admin/uni/unverify/ALUMNI_ID_HERE"
+					}
+				},
+				{
+					"name": "5.4 Delete Own Uni Alumni",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/admin/uni/alumni/ALUMNI_ID_HERE"
+					}
+				},
+				{
+					"name": "5.5 Delete Own Uni Student",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/admin/uni/student/STUDENT_ID_HERE"
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Profile Management",
+			"item": [
+				{
+					"name": "6.1 Get User Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" }
+						],
+						"url": "{{base_url}}/api/alumni/profile/USER_ID_HERE"
+					}
+				},
+				{
+					"name": "6.2 Update User Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"company\": \"Microsoft\",\n    \"position\": \"Senior Software Engineer\",\n    \"contact_number\": \"01999999999\",\n    \"linkedin_id\": \"https://linkedin.com/in/mahfuz-updated\"\n}"
+						},
+						"url": "{{base_url}}/api/alumni/profile/USER_ID_HERE"
 					}
 				}
 			]
@@ -212,11 +285,13 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:5000"
+			"value": "http://localhost:5000",
+			"type": "string"
 		},
 		{
 			"key": "token",
-			"value": "PASTE_YOUR_JWT_TOKEN_HERE"
+			"value": "PASTE_YOUR_JWT_TOKEN_HERE_AFTER_LOGIN",
+			"type": "string"
 		}
 	]
 }
