@@ -509,10 +509,12 @@ app.put("/api/alumni/profile/:id", verifyToken, async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-connectToServer().then(() => {
+connectToServer();
+
+if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
-    console.log(`Server is running on vercel`);
+    console.log(`Server is running locally on port ${PORT}`);
   });
-});
+}
 
 module.exports = app;
