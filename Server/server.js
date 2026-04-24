@@ -12,8 +12,17 @@ const {
 require("dotenv").config();
 
 const app = express();
+const corsOptions = {
+  origin: [
+    'https://universal-alumni-directory-frontend.vercel.app', 
+    'http://localhost:5173' 
+  ],
+  credentials: true, 
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+};
+
+app.use(cors(corsOptions))
 app.use(express.json());
-app.use(cors());
 
 // 1. AUTHENTICATION APIs
 app.post("/api/auth/register", async (req, res) => {
