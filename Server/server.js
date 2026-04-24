@@ -332,6 +332,26 @@ app.put(
   },
 );
 
+// System Admin: View list of ALL University Admins
+app.get(
+  "/api/admin/system/all-uni-admins",
+  verifyToken,
+  verifySystemAdmin,
+  async (req, res) => {
+    const db = getDb();
+    try {
+      const uniAdmins = await db
+        .collection("admins")
+        .find({ role: "uni_admin" })
+        .project({ password_hash: 0 })
+        .toArray();
+
+      res.status(200).json(uniAdmins);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
 
 // University Admin: View all students of their OWN university
 app.get(
@@ -343,7 +363,7 @@ app.get(
     try {
       // Shudhu oi admin er university_id er sathe match kora student-der khujbe
       const query = { university_id: new ObjectId(req.user.university_id) };
-      
+
       const studentsList = await db
         .collection("running_students")
         .find(query)
@@ -354,7 +374,7 @@ app.get(
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
-  }
+  },
 );
 
 // Unverify Alumni (Reject / Revoke verification)
