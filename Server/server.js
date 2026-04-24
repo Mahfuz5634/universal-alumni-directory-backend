@@ -332,6 +332,31 @@ app.put(
   },
 );
 
+
+// University Admin: View all students of their OWN university
+app.get(
+  "/api/admin/uni/all-students",
+  verifyToken,
+  verifyUniAdmin,
+  async (req, res) => {
+    const db = getDb();
+    try {
+      // Shudhu oi admin er university_id er sathe match kora student-der khujbe
+      const query = { university_id: new ObjectId(req.user.university_id) };
+      
+      const studentsList = await db
+        .collection("running_students")
+        .find(query)
+        .project({ password_hash: 0 }) // Password_hash bad diye data nibe
+        .toArray();
+
+      res.status(200).json(studentsList);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // Unverify Alumni (Reject / Revoke verification)
 app.put(
   "/api/admin/uni/unverify/:alumni_id",
