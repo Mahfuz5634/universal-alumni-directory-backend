@@ -507,6 +507,10 @@ app.put("/api/alumni/profile/:id", verifyToken, async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.send('Alumni Directory Backend Server is Running Perfectly!');
+});
+
 const PORT = process.env.PORT || 5000;
 
 connectToServer();
