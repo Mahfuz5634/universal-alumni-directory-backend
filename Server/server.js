@@ -12,17 +12,29 @@ const {
 require("dotenv").config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+
 const corsOptions = {
   origin: [
-    'https://universal-alumni-directory-frontend.vercel.app', 
-    'http://localhost:5173' 
+    'https://universal-alumni-directory-frontend.vercel.app',
+    'http://localhost:5173'
   ],
-  credentials: true, 
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 };
 
-app.use(cors(corsOptions))
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Ensure DB is connected before every request
+app.use(async (req, res, next) => {
+  try {
+    await connectToServer();
+    next();
+  } catch (err) {
+    res.status(500).json({ error: "Database connection failed" });
+  }
+});
 
 // 1. AUTHENTICATION APIs
 app.post("/api/auth/register", async (req, res) => {
@@ -309,6 +321,27 @@ app.delete(
   },
 );
 
+// System Admin: View list of ALL University Admins
+app.get(
+  "/api/admin/system/all-uni-admins",
+  verifyToken,
+  verifySystemAdmin,
+  async (req, res) => {
+    const db = getDb();
+    try {
+      const uniAdmins = await db
+        .collection("admins")
+        .find({ role: "uni_admin" })
+        .project({ password_hash: 0 })
+        .toArray();
+
+      res.status(200).json(uniAdmins);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
+
 // 4. UNIVERSITY ADMIN APIs
 // Verify Alumni
 app.put(
@@ -341,27 +374,6 @@ app.put(
   },
 );
 
-// System Admin: View list of ALL University Admins
-app.get(
-  "/api/admin/system/all-uni-admins",
-  verifyToken,
-  verifySystemAdmin,
-  async (req, res) => {
-    const db = getDb();
-    try {
-      const uniAdmins = await db
-        .collection("admins")
-        .find({ role: "uni_admin" })
-        .project({ password_hash: 0 })
-        .toArray();
-
-      res.status(200).json(uniAdmins);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
-);
-
 // University Admin: View all students of their OWN university
 app.get(
   "/api/admin/uni/all-students",
@@ -370,13 +382,12 @@ app.get(
   async (req, res) => {
     const db = getDb();
     try {
-      // Shudhu oi admin er university_id er sathe match kora student-der khujbe
       const query = { university_id: new ObjectId(req.user.university_id) };
 
       const studentsList = await db
         .collection("running_students")
         .find(query)
-        .project({ password_hash: 0 }) // Password_hash bad diye data nibe
+        .project({ password_hash: 0 })
         .toArray();
 
       res.status(200).json(studentsList);
@@ -519,10 +530,6 @@ app.put("/api/alumni/profile/:id", verifyToken, async (req, res) => {
 app.get('/', (req, res) => {
   res.send('Alumni Directory Backend Server is Running Perfectly!');
 });
-
-// const PORT = process.env.PORT || 5000;
-
-connectToServer().catch(console.error);
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {

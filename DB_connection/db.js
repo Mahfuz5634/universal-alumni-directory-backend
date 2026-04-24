@@ -6,13 +6,14 @@ let dbConnection;
 
 module.exports = {
     connectToServer: async function () {
+        if (dbConnection) return; 
         try {
             await client.connect();
-            dbConnection = client.db('AlumniDirectory'); 
+            dbConnection = client.db('AlumniDirectory');
             console.log('Successfully connected to Native MongoDB.');
         } catch (err) {
             console.error('MongoDB connection error:', err);
-            process.exit(1);
+            throw err;
         }
     },
     getDb: function () {
