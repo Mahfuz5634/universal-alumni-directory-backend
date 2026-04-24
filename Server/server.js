@@ -520,14 +520,7 @@ app.get('/', (req, res) => {
   res.send('Alumni Directory Backend Server is Running Perfectly!');
 });
 
-const PORT = process.env.PORT || 5000;
+//const PORT = process.env.PORT || 5000;
 
-connectToServer();
 
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log(`Server is running locally on port ${PORT}`);
-  });
-}
 
-module.exports = app;
