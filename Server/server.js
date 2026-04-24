@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 5000;
 
 const corsOptions = {
   origin: [
-    'https://universal-alumni-directory-frontend.vercel.app',
+    'https://universal-alumni-directory.vercel.app',
     'http://localhost:5173'
   ],
   credentials: true,
