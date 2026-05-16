@@ -804,6 +804,88 @@ app.get("/api/messages/conversations", verifyToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// 7. SUCCESS STORIES APIs
+app.post(
+  "/api/admin/uni/stories",
+  verifyToken,
+  verifyUniAdmin,
+  async (req, res) => {
+    const db = getDb();
+    const { title, content, featured_alumni_id } = req.body;
+    try {
+      const story = {
+        title,
+        content,
+        featured_alumni_id: featured_alumni_id ? new ObjectId(featured_alumni_id) : null,
+        university_id: new ObjectId(req.user.university_id),
+        posted_by: new ObjectId(req.user.id),
+        created_at: new Date(),
+      };
+      const result = await db.collection("stories").insertOne(story);
+      res.status(201).json({ message: "Success story posted", id: result.insertedId });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.delete(
+  "/api/admin/uni/stories/:id",
+  verifyToken,
+  verifyUniAdmin,
+  async (req, res) => {
+    const db = getDb();
+    try {
+      const result = await db.collection("stories").deleteOne({
+        _id: new ObjectId(req.params.id),
+        university_id: new ObjectId(req.user.university_id)
+      });
+      res.status(200).json({ message: "Success story deleted", result });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+app.get("/api/stories", verifyToken, async (req, res) => {
+  const db = getDb();
+  try {
+    const stories = await db.collection("stories")
+      .aggregate([
+        { $match: { university_id: new ObjectId(req.user.university_id) } },
+        { $sort: { created_at: -1 } },
+        {
+          $lookup: {
+            from: "alumni",
+            localField: "featured_alumni_id",
+            foreignField: "_id",
+            as: "featured_alumni"
+          }
+        },
+        {
+          $unwind: {
+            path: "$featured_alumni",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $project: {
+            title: 1,
+            content: 1,
+            created_at: 1,
+            "featured_alumni._id": 1,
+            "featured_alumni.name": 1,
+            "featured_alumni.img_url": 1,
+            "featured_alumni.company": 1,
+            "featured_alumni.position": 1,
+          }
+        }
+      ]).toArray();
+    res.status(200).json(stories);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get("/", (req, res) => {
   res.send("Alumni Directory Backend Server is Running Perfectly!");
