@@ -16,8 +16,8 @@ const PORT = process.env.PORT || 5000;
 
 const corsOptions = {
   origin: [
-    'https://universal-alumni-directory.vercel.app',
-    'http://localhost:5173'
+    "https://universal-alumni-directory.vercel.app",
+    "http://localhost:5173",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -39,6 +39,8 @@ app.use(async (req, res, next) => {
 // 1. AUTHENTICATION APIs
 app.post("/api/auth/register", async (req, res) => {
   const db = getDb();
+  console.log("Registration request received:", req.body);
+
   const {
     name,
     email,
@@ -53,6 +55,7 @@ app.post("/api/auth/register", async (req, res) => {
     linkedin_id,
     github_id,
     contact_number,
+    img_url,
   } = req.body;
 
   if (role === "admin" || role === "uni_admin") {
@@ -63,6 +66,7 @@ app.post("/api/auth/register", async (req, res) => {
 
   try {
     const password_hash = await bcrypt.hash(password, 10);
+
     const newUser = {
       name,
       email,
@@ -70,31 +74,40 @@ app.post("/api/auth/register", async (req, res) => {
       university_id: new ObjectId(university_id),
       department,
       contact_number,
+      img_url: img_url || "",
       created_at: new Date(),
     };
 
     let result;
 
     if (role === "alumni") {
-      Object.assign(newUser, {
+      const alumniData = {
+        ...newUser,
         role: "alumni",
-        graduation_year: parseInt(graduation_year),
+        graduation_year: parseInt(graduation_year) || 0,
         student_roll_no,
         company,
         position,
         linkedin_id,
         github_id,
         is_verified: false,
-      });
-      result = await db.collection("alumni").insertOne(newUser);
+      };
+      console.log("Inserting alumni data:", alumniData);
+      result = await db.collection("alumni").insertOne(alumniData);
     } else if (role === "student") {
-      Object.assign(newUser, {
+      const studentData = {
+        ...newUser,
         role: "student",
-        graduation_year: parseInt(graduation_year),
+        graduation_year: parseInt(graduation_year) || 0,
+        student_roll_no,
+        linkedin_id,
+        github_id,
         is_verified: true,
-      });
-      result = await db.collection("running_students").insertOne(newUser);
-    } else {
+      };
+      console.log("Inserting student data:", studentData);
+      result = await db.collection("running_students").insertOne(studentData);
+    }
+ else {
       return res.status(400).json({ error: "Invalid role" });
     }
 
@@ -102,6 +115,7 @@ app.post("/api/auth/register", async (req, res) => {
       .status(201)
       .json({ message: "User registered successfully", id: result.insertedId });
   } catch (err) {
+    console.error("Registration error:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -137,6 +151,27 @@ app.post("/api/auth/login", async (req, res) => {
 
     delete user.password_hash;
     res.status(200).json({ message: "Login successful", token, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/auth/me", verifyToken, async (req, res) => {
+  const db = getDb();
+  try {
+    let collectionName = "alumni";
+    if (req.user.role === "student") collectionName = "running_students";
+    if (req.user.role === "admin" || req.user.role === "uni_admin")
+      collectionName = "admins";
+
+    const user = await db
+      .collection(collectionName)
+      .findOne({ _id: new ObjectId(req.user.id) });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    delete user.password_hash;
+    res.status(200).json({ user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -486,6 +521,64 @@ app.delete(
   },
 );
 
+// Post Announcement (Uni Admin)
+app.post(
+  "/api/admin/uni/announcements",
+  verifyToken,
+  verifyUniAdmin,
+  async (req, res) => {
+    const db = getDb();
+    const { title, content, type } = req.body;
+    try {
+      const announcement = {
+        title,
+        content,
+        type: type || "News", // News, Event, Reunion
+        university_id: new ObjectId(req.user.university_id),
+        posted_by: req.user.id,
+        created_at: new Date(),
+      };
+      const result = await db.collection("announcements").insertOne(announcement);
+      res.status(201).json({ message: "Announcement posted", id: result.insertedId });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// Delete Announcement (Uni Admin)
+app.delete(
+  "/api/admin/uni/announcements/:id",
+  verifyToken,
+  verifyUniAdmin,
+  async (req, res) => {
+    const db = getDb();
+    try {
+      const result = await db.collection("announcements").deleteOne({
+        _id: new ObjectId(req.params.id),
+        university_id: new ObjectId(req.user.university_id)
+      });
+      res.status(200).json({ message: "Announcement deleted", result });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// Get Announcements (General, filtered by uni)
+app.get("/api/announcements", verifyToken, async (req, res) => {
+  const db = getDb();
+  try {
+    const announcements = await db.collection("announcements")
+      .find({ university_id: new ObjectId(req.user.university_id) })
+      .sort({ created_at: -1 })
+      .toArray();
+    res.status(200).json(announcements);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 5. GENERAL APIs
 app.get("/api/universities", async (req, res) => {
   const db = getDb();
@@ -516,6 +609,15 @@ app.put("/api/alumni/profile/:id", verifyToken, async (req, res) => {
   delete updateData.password_hash;
   delete updateData.is_verified;
   delete updateData.role;
+  delete updateData._id;
+
+  // Convert types if they exist
+  if (updateData.university_id) {
+    updateData.university_id = new ObjectId(updateData.university_id);
+  }
+  if (updateData.graduation_year) {
+    updateData.graduation_year = parseInt(updateData.graduation_year);
+  }
 
   try {
     const result = await db
@@ -527,8 +629,56 @@ app.put("/api/alumni/profile/:id", verifyToken, async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.send('Alumni Directory Backend Server is Running Perfectly!');
+app.put("/api/student/profile/:id", verifyToken, async (req, res) => {
+  const db = getDb();
+  const updateData = req.body;
+  delete updateData.password_hash;
+  delete updateData.is_verified;
+  delete updateData.role;
+  delete updateData._id;
+
+  // Convert types if they exist
+  if (updateData.university_id) {
+    updateData.university_id = new ObjectId(updateData.university_id);
+  }
+  if (updateData.graduation_year) {
+    updateData.graduation_year = parseInt(updateData.graduation_year);
+  }
+
+  try {
+    const result = await db
+      .collection("running_students")
+      .updateOne({ _id: new ObjectId(req.params.id) }, { $set: updateData });
+    res.status(200).json({ message: "Profile updated successfully", result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put("/api/admin/profile/:id", verifyToken, async (req, res) => {
+  const db = getDb();
+  const updateData = req.body;
+  delete updateData.password_hash;
+  delete updateData.role;
+  delete updateData._id;
+
+  // Convert types if they exist
+  if (updateData.university_id) {
+    updateData.university_id = new ObjectId(updateData.university_id);
+  }
+
+  try {
+    const result = await db
+      .collection("admins")
+      .updateOne({ _id: new ObjectId(req.params.id) }, { $set: updateData });
+    res.status(200).json({ message: "Profile updated successfully", result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/", (req, res) => {
+  res.send("Alumni Directory Backend Server is Running Perfectly!");
 });
 
 if (process.env.NODE_ENV !== "production") {
