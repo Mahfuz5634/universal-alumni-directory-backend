@@ -677,6 +677,134 @@ app.put("/api/admin/profile/:id", verifyToken, async (req, res) => {
   }
 });
 
+// 6. MESSAGING APIs
+app.post("/api/messages/send", verifyToken, async (req, res) => {
+  const db = getDb();
+  const { receiver_id, receiver_name, receiver_role, content } = req.body;
+
+  if (!receiver_id || !content) {
+    return res.status(400).json({ error: "Receiver ID and content are required" });
+  }
+
+  try {
+    const newMessage = {
+      sender_id: new ObjectId(req.user.id),
+      sender_name: req.user.name || "User", // Ideally, client sends it or we fetch it
+      sender_role: req.user.role,
+      receiver_id: new ObjectId(receiver_id),
+      receiver_name: receiver_name || "User",
+      receiver_role: receiver_role || "User",
+      content,
+      timestamp: new Date(),
+      is_read: false
+    };
+
+    const result = await db.collection("messages").insertOne(newMessage);
+    res.status(201).json({ message: "Message sent", messageData: { _id: result.insertedId, ...newMessage } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/messages/history/:userId", verifyToken, async (req, res) => {
+  const db = getDb();
+  const currentUserId = new ObjectId(req.user.id);
+  const otherUserId = new ObjectId(req.params.userId);
+
+  try {
+    const messages = await db.collection("messages").find({
+      $or: [
+        { sender_id: currentUserId, receiver_id: otherUserId },
+        { sender_id: otherUserId, receiver_id: currentUserId }
+      ]
+    }).sort({ timestamp: 1 }).toArray();
+
+    res.status(200).json(messages);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/messages/conversations", verifyToken, async (req, res) => {
+  const db = getDb();
+  const currentUserId = new ObjectId(req.user.id);
+
+  try {
+    // Aggregation pipeline to get the latest message for each unique conversation
+    const pipeline = [
+      {
+        $match: {
+          $or: [{ sender_id: currentUserId }, { receiver_id: currentUserId }]
+        }
+      },
+      {
+        $sort: { timestamp: -1 } // Sort by newest first
+      },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ["$sender_id", currentUserId] },
+              "$receiver_id",
+              "$sender_id"
+            ]
+          },
+          latestMessage: { $first: "$$ROOT" }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          contact_id: "$_id",
+          latestMessage: 1
+        }
+      },
+      {
+        $sort: { "latestMessage.timestamp": -1 }
+      }
+    ];
+
+    const conversations = await db.collection("messages").aggregate(pipeline).toArray();
+
+    // Now let's fetch the contact details (name, img_url) from alumni or running_students
+    const contactsWithDetails = await Promise.all(conversations.map(async (conv) => {
+      let contactData = null;
+      // Search in alumni first
+      contactData = await db.collection("alumni").findOne(
+        { _id: conv.contact_id },
+        { projection: { name: 1, img_url: 1, role: 1 } }
+      );
+      
+      // If not alumni, search in students
+      if (!contactData) {
+        contactData = await db.collection("running_students").findOne(
+          { _id: conv.contact_id },
+          { projection: { name: 1, img_url: 1, role: 1 } }
+        );
+      }
+
+      // If not found in either (maybe uni_admin/admin, though rare to chat with them here)
+      if (!contactData) {
+        contactData = await db.collection("admins").findOne(
+          { _id: conv.contact_id },
+          { projection: { name: 1, role: 1 } }
+        );
+      }
+
+      return {
+        ...conv,
+        contact_name: contactData ? contactData.name : "Unknown User",
+        contact_img_url: contactData ? contactData.img_url : null,
+        contact_role: contactData ? contactData.role : "User"
+      };
+    }));
+
+    res.status(200).json(contactsWithDetails);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/", (req, res) => {
   res.send("Alumni Directory Backend Server is Running Perfectly!");
 });
